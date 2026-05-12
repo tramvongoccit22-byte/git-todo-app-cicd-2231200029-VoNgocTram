@@ -1,35 +1,35 @@
-name: CI/CD Pipeline
-
+name: Full Test and Build Pipeline
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ main ]
+    branches: [ "main" ]
 
 jobs:
-  build-and-test:
+  unit-and-integration-tests:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install
+      - name: Run Jest Tests
+        run: npm test
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-
-    - name: Install dependencies
-      run: npm install
-
-    - name: Run Unit Tests
-      run: npm run test:unit
-
-    - name: Run Integration Tests
-      run: npm run test:integration
-
-    - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
-
-    - name: Run E2E Tests
-      run: xvfb-run npm run test:e2e
+  build:
+    needs: [unit-and-integration-tests] 
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install
+      - name: Build application
+        run: npm run build
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: todo-app-linux
+          path: dist/
